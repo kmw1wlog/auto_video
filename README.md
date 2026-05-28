@@ -17,7 +17,6 @@
 ## 설치
 
 ```bash
-cd market-detective-reels
 npm install
 ```
 
