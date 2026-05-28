@@ -1,0 +1,121 @@
+{
+  "name": "Market Detective Production Skeleton",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "hours", "hoursInterval": 1 }]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "notes": "TODO: 운영 주기 확정"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3000/todo/collect-source"
+      },
+      "id": "collect-source",
+      "name": "Collect source placeholder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [220, 0],
+      "notes": "TODO: DART/KRX/SEC/news source adapter로 교체. API 키는 이 skeleton에 포함하지 않는다."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3000/todo/normalize"
+      },
+      "id": "normalize",
+      "name": "Normalize placeholder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [440, 0],
+      "notes": "TODO: 이벤트 정규화"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3000/todo/score"
+      },
+      "id": "score",
+      "name": "Score placeholder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [660, 0],
+      "notes": "TODO: 중요도 점수화"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3000/todo/generate-script"
+      },
+      "id": "generate-script",
+      "name": "Generate script placeholder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [880, 0],
+      "notes": "TODO: LLM planner 연결 전까지 mock planner 사용"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3000/todo/render"
+      },
+      "id": "render",
+      "name": "Render placeholder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1100, 0],
+      "notes": "TODO: local FFmpeg 또는 Creatomate/Shotstack/Remotion adapter"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3000/todo/review-package"
+      },
+      "id": "review-package",
+      "name": "Create review package placeholder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1320, 0],
+      "notes": "TODO: review HTML/JSON 생성"
+    },
+    {
+      "parameters": {},
+      "id": "human-approval",
+      "name": "Human approval placeholder",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1540, 0],
+      "notes": "TODO: 실제 승인 UI 또는 Slack/Notion 승인으로 교체"
+    },
+    {
+      "parameters": {},
+      "id": "instagram-publish",
+      "name": "Instagram publish placeholder",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1760, 0],
+      "notes": "TODO: Instagram Graph API publisher 연결. dry-run 모드가 기본값이어야 한다."
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": { "main": [[{ "node": "Collect source placeholder", "type": "main", "index": 0 }]] },
+    "Collect source placeholder": { "main": [[{ "node": "Normalize placeholder", "type": "main", "index": 0 }]] },
+    "Normalize placeholder": { "main": [[{ "node": "Score placeholder", "type": "main", "index": 0 }]] },
+    "Score placeholder": { "main": [[{ "node": "Generate script placeholder", "type": "main", "index": 0 }]] },
+    "Generate script placeholder": { "main": [[{ "node": "Render placeholder", "type": "main", "index": 0 }]] },
+    "Render placeholder": { "main": [[{ "node": "Create review package placeholder", "type": "main", "index": 0 }]] },
+    "Create review package placeholder": { "main": [[{ "node": "Human approval placeholder", "type": "main", "index": 0 }]] },
+    "Human approval placeholder": { "main": [[{ "node": "Instagram publish placeholder", "type": "main", "index": 0 }]] }
+  },
+  "pinData": {},
+  "settings": {},
+  "staticData": null
+}

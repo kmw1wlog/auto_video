@@ -1,0 +1,61 @@
+{
+  "name": "Market Detective Local MVP",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3000/api/market-detective/run-sample",
+        "sendBody": false
+      },
+      "id": "run-sample",
+      "name": "Run Market Detective Sample",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [260, 0]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/market-detective/runs/latest"
+      },
+      "id": "get-latest",
+      "name": "Get Latest Review Package",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [520, 0]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}"
+      },
+      "id": "respond-review",
+      "name": "Respond with review package path",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [780, 0]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{ "node": "Run Market Detective Sample", "type": "main", "index": 0 }]]
+    },
+    "Run Market Detective Sample": {
+      "main": [[{ "node": "Get Latest Review Package", "type": "main", "index": 0 }]]
+    },
+    "Get Latest Review Package": {
+      "main": [[{ "node": "Respond with review package path", "type": "main", "index": 0 }]]
+    }
+  },
+  "pinData": {},
+  "settings": {},
+  "staticData": null
+}
