@@ -1,0 +1,41 @@
+[
+  {
+    "sourceName": "sample_news",
+    "sourceUrl": "https://example.com/sample-3",
+    "market": "US",
+    "ticker": "NVDA",
+    "assetName": "NVIDIA",
+    "headline": "NVIDIA, 실적 발표 후 프리마켓 변동성 확대",
+    "body": "실적 발표 이후 AI 수요와 가이던스에 대한 시장 해석이 엇갈렸다.",
+    "priceChangePercent": 5.2,
+    "volumeChangePercent": 150,
+    "eventType": "earnings",
+    "collectedAt": "2026-05-28T21:00:00+09:00"
+  },
+  {
+    "sourceName": "sample_price",
+    "sourceUrl": "https://example.com/sample-4",
+    "market": "US",
+    "ticker": "TSLA",
+    "assetName": "Tesla",
+    "headline": "Tesla, 거래량 급증과 함께 단기 변동성 확대",
+    "body": "최근 뉴스와 기술적 반등 기대가 겹치며 거래량이 늘었다.",
+    "priceChangePercent": -4.4,
+    "volumeChangePercent": 180,
+    "eventType": "price_move",
+    "collectedAt": "2026-05-28T22:00:00+09:00"
+  },
+  {
+    "sourceName": "sample_disclosure",
+    "sourceUrl": "https://example.com/sample-2",
+    "market": "KR",
+    "ticker": "000660",
+    "assetName": "SK하이닉스",
+    "headline": "SK하이닉스, 신규 투자 관련 공시 발생",
+    "body": "신규 설비 투자 관련 공시가 확인됐다.",
+    "priceChangePercent": 2.1,
+    "volumeChangePercent": 85,
+    "eventType": "disclosure",
+    "collectedAt": "2026-05-28T10:00:00+09:00"
+  }
+]

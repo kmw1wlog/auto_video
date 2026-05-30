@@ -1,18 +1,19 @@
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { getMarketDetectiveChannel } from "../config/channels.js";
 import { loadEnv } from "../config/env.js";
-import { SampleSource } from "../sources/sampleSource.js";
-import { normalizeEvent } from "../normalize/normalizeEvent.js";
-import { createMockReelPlan } from "../planning/mockPlanner.js";
-import { validateScript } from "../moderation/validateScript.js";
-import { createMockTtsAudio } from "../tts/mockTts.js";
-import { LocalFfmpegRenderer } from "../render/localFfmpegRenderer.js";
-import { createReviewPackage } from "../review/reviewPackage.js";
 import { InstagramDryRunPublisher } from "../publish/instagramDryRunPublisher.js";
+import { StoryboardFfmpegRenderer } from "../render/storyboardFfmpegRenderer.js";
+import type { StoryboardRenderResult } from "../render/storyboardFfmpegRenderer.js";
+import { createStoryboardReviewHtml } from "../review/createReviewHtml.js";
+import { SampleEventProvider } from "../sources/sampleEventProvider.js";
+import { OpenDartProvider } from "../sources/openDartProvider.js";
+import { KisQuoteProvider } from "../sources/kisQuoteProvider.js";
+import { WebSearchProvider } from "../sources/webSearchProvider.js";
+import { createMarketDetectiveStoryboard } from "../storyboard/createMarketDetectiveStoryboard.js";
+import type { StoryboardMarketEvent } from "../storyboard/types.js";
+import { createNarrationAudio } from "../tts/openAiTts.js";
+import { writeJsonFile } from "../utils/file.js";
 import { ensureDir } from "../utils/file.js";
-import { resolveMascotPath } from "../utils/mascot.js";
-import type { NormalizedMarketEvent } from "../types/event.js";
 
 export type PipelineResult = {
   ok: true;
@@ -22,25 +23,52 @@ export type PipelineResult = {
   thumbnailPath: string;
   reviewHtmlPath: string;
   reviewJsonPath: string;
+  storyboardPath: string;
+  subtitlesPath: string;
+  assetLogPath: string;
   dryRunPublishPath: string;
-  selectedEvent: NormalizedMarketEvent;
+  selectedEvent: StoryboardMarketEvent;
 };
 
-function runIdFromEvent(event: NormalizedMarketEvent): string {
+function runIdFromEvent(event: StoryboardMarketEvent): string {
   const match = event.collectedAt.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
   const timestamp = match
     ? `${match[1]}${match[2]}${match[3]}-${match[4]}${match[5]}${match[6]}`
-    : event.createdAt.replace(/[-:]/g, "").slice(0, 15);
-  return `${timestamp}-${event.ticker}`;
+    : new Date().toISOString().replace(/[-:]/g, "").slice(0, 15);
+  return `${timestamp}-${event.ticker ?? "market"}`;
+}
+
+async function collectProviderUsage(event: StoryboardMarketEvent, searchProviderName: "perplexity" | "brave" | "none") {
+  const dart = new OpenDartProvider();
+  const kis = new KisQuoteProvider();
+  const search = new WebSearchProvider(searchProviderName);
+
+  const [dartResults, quote, searchResults] = await Promise.all([
+    dart.fetch({ ticker: event.ticker }).catch(() => []),
+    event.ticker ? kis.fetch({ ticker: event.ticker, market: event.market === "UNKNOWN" ? undefined : event.market }).catch(() => undefined) : Promise.resolve(undefined),
+    search.fetch({ query: `${event.companyName ?? event.ticker ?? ""} 공시 급등 뉴스` }).catch(() => [])
+  ]);
+
+  return {
+    usage: {
+      openDart: dart.isConfigured() && dartResults.length > 0,
+      kis: kis.isConfigured() && Boolean(quote),
+      search: searchProviderName
+    },
+    enrichedSourceUrls: [
+      ...event.sourceUrls,
+      ...dartResults.map((result) => result.url),
+      ...searchResults.map((result) => result.url)
+    ].filter(Boolean)
+  };
 }
 
 export async function runMarketDetectiveSamplePipeline(): Promise<PipelineResult> {
   const env = loadEnv();
-  const channel = getMarketDetectiveChannel();
-  const source = new SampleSource(env.sampleEventsPath);
-  const rawEvents = await source.loadEvents();
-  const normalized = rawEvents.map((event) => normalizeEvent(event));
-  const candidates = normalized
+  process.env.SAMPLE_EVENTS_PATH = env.sampleEventsPath;
+  const source = new SampleEventProvider();
+  const events = await source.fetch();
+  const candidates = events
     .filter((event) => event.importanceScore >= 45)
     .sort((a, b) => b.importanceScore - a.importanceScore);
 
@@ -49,48 +77,60 @@ export async function runMarketDetectiveSamplePipeline(): Promise<PipelineResult
   }
 
   const selectedEvent = candidates[0];
-  const plan = createMockReelPlan(selectedEvent, channel);
-  const moderation = validateScript(plan);
-  if (moderation.moderationStatus === "failed") {
-    throw new Error(`금칙어 검사 실패: ${moderation.forbiddenWords.join(", ")}`);
-  }
-
   const runId = runIdFromEvent(selectedEvent);
   const runDir = path.join(env.outputDir, runId);
   await ensureDir(runDir);
 
-  const audioPath = await createMockTtsAudio(runDir, 30);
-  const mascotPath = await resolveMascotPath(channel.mascotPath, channel.fallbackMascotPath);
-  const renderer = new LocalFfmpegRenderer();
-  const renderResult = await renderer.render({
-    channelId: "market-detective",
-    title: plan.title,
-    hook: plan.hook,
-    scenes: plan.scenes,
-    subtitles: plan.subtitles,
-    mascotPath,
-    audioPath,
-    outputPath: path.join(runDir, "video.mp4"),
-    disclaimer: plan.disclaimer,
-    cta: plan.cta
+  const provider = await collectProviderUsage(selectedEvent, env.searchProvider);
+  const storyboard = await createMarketDetectiveStoryboard({
+    runDir,
+    runId,
+    event: {
+      ...selectedEvent,
+      sourceUrls: provider.enrichedSourceUrls
+    },
+    mode: env.marketDetectiveMode,
+    useOpenAiPlanner: env.useOpenAiPlanner,
+    providerUsage: provider.usage
+  });
+
+  const tts = await createNarrationAudio({
+    outputDir: runDir,
+    narrationScript: storyboard.narrationScript,
+    durationSec: 30,
+    useOpenAiTts: env.useOpenAiTts
+  });
+  storyboard.providerUsage.tts = tts.mode;
+
+  const renderResult: StoryboardRenderResult = await new StoryboardFfmpegRenderer().render({
+    storyboard,
+    runDir,
+    audioPath: tts.audioPath
   });
 
   const dryRunPublishPath = path.join(runDir, "instagram-dry-run.json");
   await new InstagramDryRunPublisher().publish(
     {
       videoPath: renderResult.videoPath,
-      caption: plan.instagramCaption,
+      caption: storyboard.instagramCaption,
       channelId: "market-detective"
     },
     dryRunPublishPath
   );
 
-  const reviewPackage = await createReviewPackage({
-    runDir,
+  const reviewJsonPath = path.join(runDir, "review.json");
+  await writeJsonFile(reviewJsonPath, {
+    channelId: "market-detective",
+    title: storyboard.title,
     event: selectedEvent,
-    plan,
-    renderResult
+    storyboardPath: renderResult.storyboardPath,
+    videoPath: renderResult.videoPath,
+    thumbnailPath: renderResult.thumbnailPath,
+    sourceUrls: storyboard.sourceUrls,
+    moderationStatus: storyboard.moderation.passed ? "passed" : "needs_review",
+    readyForApproval: storyboard.moderation.passed
   });
+  const reviewHtmlPath = await createStoryboardReviewHtml({ runDir, storyboard, renderResult });
 
   return {
     ok: true,
@@ -98,8 +138,11 @@ export async function runMarketDetectiveSamplePipeline(): Promise<PipelineResult
     channelId: "market-detective",
     videoPath: renderResult.videoPath,
     thumbnailPath: renderResult.thumbnailPath,
-    reviewHtmlPath: reviewPackage.reviewHtmlPath,
-    reviewJsonPath: reviewPackage.reviewJsonPath,
+    reviewHtmlPath,
+    reviewJsonPath,
+    storyboardPath: renderResult.storyboardPath,
+    subtitlesPath: renderResult.subtitlesPath,
+    assetLogPath: renderResult.assetLogPath,
     dryRunPublishPath,
     selectedEvent
   };
@@ -114,6 +157,9 @@ async function main(): Promise<void> {
   console.log(`Video: ${result.videoPath}`);
   console.log(`Thumbnail: ${result.thumbnailPath}`);
   console.log(`Review: ${result.reviewHtmlPath}`);
+  console.log(`Storyboard: ${result.storyboardPath}`);
+  console.log(`Subtitles: ${result.subtitlesPath}`);
+  console.log(`Asset log: ${result.assetLogPath}`);
   console.log(`Instagram dry-run: ${result.dryRunPublishPath}`);
 }
 

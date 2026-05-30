@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx src/api/server.ts",
     "market-detective:sample": "tsx src/workflow/runLocalPipeline.ts",
+    "market-detective:reference": "tsx src/workflow/analyzeReferenceVideo.ts && tsx src/workflow/runLocalPipeline.ts",
     "test": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
     "test:e2e": "vitest run tests/e2e",

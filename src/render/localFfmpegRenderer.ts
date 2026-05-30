@@ -126,8 +126,8 @@ export class LocalFfmpegRenderer implements RenderAdapter {
 
     const filterComplex = [
       `[0:v]${videoFilters}[base]`,
-      "[1:v]format=rgba,scale=w='if(gte(t,27),330,260)':h=-1:eval=frame[mascot]",
-      `[base][mascot]overlay=x='W-w-54':y='H-h-390+24*sin(2*PI*t/1.4)':format=auto[withMascot]`,
+      "[1:v]format=rgba,scale=280:-1[mascot]",
+      `[base][mascot]overlay=x='W-w-54':y='H-h-390':format=auto:eof_action=repeat[withMascot]`,
       `[withMascot]ass='${escapeFilterPath(assPath)}'[vout]`
     ].join(";");
 
@@ -140,8 +140,6 @@ export class LocalFfmpegRenderer implements RenderAdapter {
           "lavfi",
           "-i",
           "color=c=#111111:s=1080x1920:d=30:r=30",
-          "-loop",
-          "1",
           "-i",
           input.mascotPath,
           "-i",

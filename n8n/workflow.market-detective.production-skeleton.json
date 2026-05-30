@@ -4,7 +4,7 @@
     {
       "parameters": {
         "rule": {
-          "interval": [{ "field": "hours", "hoursInterval": 1 }]
+          "interval": [{ "field": "hours", "hoursInterval": 3 }]
         }
       },
       "id": "schedule-trigger",
@@ -12,7 +12,7 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1,
       "position": [0, 0],
-      "notes": "TODO: 운영 주기 확정"
+      "notes": "정기 수집 기본값은 3시간. 특종/속보 webhook이 붙으면 이 trigger와 병행한다."
     },
     {
       "parameters": {
