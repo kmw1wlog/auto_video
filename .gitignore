@@ -6,6 +6,8 @@ dist/
 data/output/*
 !data/output/.gitkeep
 data/reference/frames/
+data/youtube/*.vtt
+data/youtube/*.srv*
 reference/*.mp4
 assets/mascot/*.png
 assets/mascot/market-detective/*.png

@@ -63,6 +63,8 @@ async function waitForFalResult(submitResult: FalQueueResponse, key: string): Pr
 export async function createFalElevenLabsAudio(input: {
   outputDir: string;
   narrationScript: string;
+  voiceId?: string;
+  voiceName?: string;
 }): Promise<string> {
   const key = getFalKey();
   if (!key) {
@@ -72,7 +74,8 @@ export async function createFalElevenLabsAudio(input: {
   const endpoint = process.env.FAL_ELEVENLABS_TTS_ENDPOINT ?? "https://queue.fal.run/fal-ai/elevenlabs/tts/eleven-v3";
   const payload = {
     text: input.narrationScript,
-    voice: process.env.FAL_ELEVENLABS_VOICE ?? "Rachel",
+    voice: input.voiceName || process.env.FAL_ELEVENLABS_VOICE || "Rachel",
+    voice_id: input.voiceId || process.env.FAL_ELEVENLABS_VOICE_ID || undefined,
     stability: Number(process.env.FAL_ELEVENLABS_STABILITY ?? 0.5),
     language_code: process.env.FAL_ELEVENLABS_LANGUAGE_CODE ?? "ko",
     apply_text_normalization: "auto"

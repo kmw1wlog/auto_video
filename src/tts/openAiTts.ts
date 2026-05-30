@@ -29,6 +29,8 @@ export async function createNarrationAudio(input: {
   narrationScript: string;
   durationSec?: number;
   useOpenAiTts: boolean;
+  voiceId?: string;
+  voiceName?: string;
 }): Promise<TtsResult> {
   await ensureDir(input.outputDir);
   const durationSec = input.durationSec ?? 30;
@@ -38,7 +40,9 @@ export async function createNarrationAudio(input: {
       return {
         audioPath: await createFalElevenLabsAudio({
           outputDir: input.outputDir,
-          narrationScript: input.narrationScript
+          narrationScript: input.narrationScript,
+          voiceId: input.voiceId,
+          voiceName: input.voiceName
         }),
         mode: "fal-elevenlabs"
       };

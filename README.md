@@ -42,8 +42,10 @@ cp .env.example .env
 - `USE_FAL_ELEVENLABS_TTS`, `FAL_KEY`: 선택. Fal ElevenLabs v3 TTS 사용 여부와 서버 키
 - `USE_AUDIBLE_MOCK_TTS`: 선택. API 키 없이 검수할 때 무음 대신 낮은 볼륨의 placeholder 오디오 생성
 - `SOURCE_POLL_INTERVAL_HOURS`: 운영 수집 주기 기본값. n8n production skeleton은 3시간 기준
+- `CONTENT_CSV_PATH`, `CONTENT_ROW_ID`: 유튜브 강의식 Google Sheet/CSV 콘텐츠 행 기반 자동화 입력
+- `GEMINI_API_KEY`: 선택. 유튜브 자동화 강의 자막을 구현 노트로 요약할 때 사용
 
-Kie/Creatomate/Buffer 및 미장/코인 관련 키 변수명도 `.env.example`에 비워 둔 placeholder로만 정리했습니다. 주문/계좌/매매 API는 이번 버전에서 호출하지 않습니다.
+Kie/Creatomate/Buffer 및 미장/코인 관련 키 변수명도 `.env.example`에 비워 둔 placeholder로만 정리했습니다. `USE_KIE_MASCOT_TASK=true`이면 Kling image-to-video 마스코트 작업을 생성하고 `kie-mascot-task.json`에 task id를 남깁니다. 주문/계좌/매매 API는 이번 버전에서 호출하지 않습니다.
 
 ## 마스코트 이미지와 클립
 
@@ -112,6 +114,12 @@ npm run market-detective:reference
 
 ```bash
 npm run market-detective:sample
+```
+
+Google Sheet/CSV 콘텐츠 행에서 바로 릴스를 만들려면 아래 명령을 사용합니다. 유튜브 강의의 구조처럼 CSV에서 제목/설명/스크립트/보이스 ID를 읽고, OpenAI planner, Fal ElevenLabs TTS, 로컬 FFmpeg 렌더, SNS dry-run payload 생성까지 진행합니다.
+
+```bash
+npm run content-sheet:sample
 ```
 
 실행 결과는 `data/output/{runId}/` 아래에 생성됩니다.

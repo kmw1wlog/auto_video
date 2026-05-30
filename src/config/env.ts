@@ -5,6 +5,7 @@ export type AppEnv = {
   port: number;
   outputDir: string;
   sampleEventsPath: string;
+  contentCsvPath: string;
   marketDetectiveMode: "full_auto" | "semi_manual";
   useOpenAiPlanner: boolean;
   useOpenAiTts: boolean;
@@ -49,6 +50,8 @@ export function loadEnv(): AppEnv {
     outputDir: process.env.OUTPUT_DIR ?? "data/output",
     sampleEventsPath:
       process.env.SAMPLE_EVENTS_PATH ?? "data/sample-events/market-detective-sample.json",
+    contentCsvPath:
+      process.env.CONTENT_CSV_PATH ?? "/home/openq/Downloads/Video Content Management - Content.csv",
     marketDetectiveMode: mode,
     useOpenAiPlanner: boolEnv(process.env.USE_OPENAI_PLANNER),
     useOpenAiTts: boolEnv(process.env.USE_OPENAI_TTS),
